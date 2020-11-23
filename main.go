@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/minkj1992/go_nomad/array"
+	"github.com/minkj1992/go_nomad/collection"
 	"github.com/minkj1992/go_nomad/hello"
 )
 
@@ -15,6 +15,11 @@ func main() {
 	hello.SayHello(name)
 	hello.SayBye(name)
 
-	total := array.Add(1, 2, 3, 4, 5)
+	total := collection.Add(1, 2, 3, 4, 5)
 	fmt.Println(total)
+
+	oldSlice := []string{"leoo.j", "minkj1992", "jmu2001", "jejulover"}
+	newSlice := collection.NewSlice(oldSlice, "kakao", "naver", "google")
+	fmt.Println(&oldSlice[0])
+	fmt.Println(&newSlice[0])
 }
