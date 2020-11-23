@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/minkj1992/go_nomad/accounts"
+	"github.com/minkj1992/go_nomad/accounts/accounts"
 )
 
 func main() {
