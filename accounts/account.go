@@ -16,6 +16,22 @@ var (
 	errNoMoney = errors.New("Can't withdraw: you don't have that money")
 )
 
+// private method to check account info
+func (a *Account) checkAccount() {
+	fmt.Println(a)
+}
+
+// Balance is getter for balance of account
+func (a Account) Balance() int {
+	// receiver 복사해도 상관없다.
+	return a.balance
+}
+
+// Owner is getter for owner of account
+func (a Account) Owner() string {
+	return a.owner
+}
+
 // NewAccount is factory to make Account
 func NewAccount(owner string) *Account {
 	account := Account{owner: owner, balance: 0}
@@ -29,23 +45,27 @@ receiver의 conv는 struct의 앞글자 소문자
 `Pointer receiver`: go 에서는 value로 전달하기 때문에 copy가 일어난다. 이를 방지하기 위해서 `*receiver`를 사용한다.
 */
 func (a *Account) Deposit(ammount int) {
-	defer a.Balance()
+	defer a.checkAccount()
 	a.balance += ammount
 }
 
-// Balance shows balance of a account
-func (a *Account) Balance() int {
-	// receiver 복사해도 상관없다.
-	fmt.Printf("%s has $%d\n", a.owner, a.balance)
-	return a.balance
-}
-
 // Withdraw amount from a account
-func (a Account) Withdraw(amount int) error {
-	defer a.Balance()
+func (a *Account) Withdraw(amount int) error {
+	defer a.checkAccount()
 	if a.balance < amount {
 		return errNoMoney
 	}
 	a.balance -= amount
 	return nil // error의 nil type
+}
+
+// ChangeOwner changes owner of account
+func (a *Account) ChangeOwner(newOwner string) {
+	defer a.checkAccount()
+	a.owner = newOwner
+}
+
+// like __repr__
+func (a Account) String() string {
+	return fmt.Sprint("Owner: ", a.Owner(), "\nBalance: ", a.Balance(), "\n")
 }

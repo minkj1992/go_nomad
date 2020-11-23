@@ -9,8 +9,9 @@ import (
 func main() {
 	account := accounts.NewAccount("leoo")
 	account.Deposit(10)
-	err := account.Withdraw(100)
+	err := account.Withdraw(10)
 	if err != nil {
 		log.Fatalln(err) // print & sig kill
 	}
+	account.ChangeOwner("mom")
 }
