@@ -1,12 +1,16 @@
 package main
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/minkj1992/go_nomad/accounts"
 )
 
 func main() {
 	account := accounts.NewAccount("leoo")
-	fmt.Println(account)
+	account.Deposit(10)
+	err := account.Withdraw(100)
+	if err != nil {
+		log.Fatalln(err) // print & sig kill
+	}
 }
