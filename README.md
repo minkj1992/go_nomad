@@ -20,7 +20,7 @@ https://nomadcoders.co/go-for-beginners/
 │   ├── collection
 │   ├── hello
 │   └── main.go
-└── urlchecker 
+└── urlchecker      # ch03: 고루틴 기초: url 요청
     ├── channel
     ├── main.go
     └── urlchecker
