@@ -25,51 +25,22 @@ type extractedJob struct {
 
 func main() {
 	var jobs []extractedJob
+	c := make(chan []extractedJob)
 	baseURL := "https://kr.indeed.com/jobs?q=go&limit=50"
+	fileFmt := "json" // csv, json
 
 	totalPages := getPages(baseURL)
 	for i := 0; i < totalPages; i++ {
-		extractedJobs := getPage(baseURL, i)
+		go getPage(baseURL, i, c)
+	}
+
+	for i := 0; i < totalPages; i++ {
+		extractedJobs := <-c
 		jobs = append(jobs, extractedJobs...)
 	}
 
-	writeJobs(jobs, "json")
+	writeJobs(jobs, fileFmt)
 	fmt.Println("Done, extracted", len(jobs))
-}
-
-// write to csv
-func writeJobs(jobs []extractedJob, fmt string) {
-	fileName := "jobs" + "." + fmt
-	if fmt == "json" {
-		jsonString, _ := json.MarshalIndent(jobs, "", "  ")
-		err := ioutil.WriteFile(fileName, jsonString, 0644)
-		checkErr(err)
-	} else if fmt == "csv" {
-		file, err := os.Create(fileName)
-		checkErr(err)
-
-		w := csv.NewWriter(file)
-		headers := structs.Names(&extractedJob{})
-		wErr := w.Write(headers)
-		checkErr(wErr)
-
-		for _, job := range jobs {
-			jobSlice := []string{
-				getApplyURL(job.ID),
-				job.Title,
-				job.Location,
-				job.Salary,
-				job.Summary,
-			}
-			jwErr := w.Write(jobSlice)
-			checkErr(jwErr)
-		}
-		defer func() {
-			w.Flush()
-			file.Close()
-		}()
-	}
-
 }
 
 func getApplyURL(id string) string {
@@ -77,7 +48,9 @@ func getApplyURL(id string) string {
 	return baseApplyURL + id
 }
 
-func getPage(baseURL string, page int) (jobs []extractedJob) {
+func getPage(baseURL string, page int, mainC chan<- []extractedJob) {
+	var jobs []extractedJob
+	c := make(chan extractedJob)
 	pageUnit := 50
 	pageURL := baseURL + "&start=" + strconv.Itoa(page*pageUnit)
 	fmt.Println("Requesting ", pageURL)
@@ -92,20 +65,24 @@ func getPage(baseURL string, page int) (jobs []extractedJob) {
 
 	searchCards := doc.Find(".jobsearch-SerpJobCard")
 	searchCards.Each(func(i int, card *goquery.Selection) {
-		job := extractJob(card)
-		jobs = append(jobs, job)
+		go extractJob(card, c)
 	})
 
-	return
+	for i := 0; i < searchCards.Length(); i++ {
+		job := <-c
+		jobs = append(jobs, job)
+	}
+
+	mainC <- jobs
 }
 
-func extractJob(card *goquery.Selection) extractedJob {
+func extractJob(card *goquery.Selection, c chan<- extractedJob) {
 	id, _ := card.Attr("data-jk")
 	title := cleanString(card.Find(".title>a").Text())
 	location := cleanString(card.Find("sjcl").Text())
 	salary := cleanString(card.Find(".salaryText").Text())
 	summary := cleanString(card.Find(".summary").Text())
-	return extractedJob{
+	c <- extractedJob{
 		ID:       id,
 		Title:    title,
 		Location: location,
@@ -146,6 +123,41 @@ func checkErr(err error) {
 func checkCode(res *http.Response) {
 	if res.StatusCode != 200 {
 		log.Fatalln("Request failed with Status: ", res.StatusCode)
+	}
+
+}
+
+// write to csv
+func writeJobs(jobs []extractedJob, fmt string) {
+	fileName := "jobs" + "." + fmt
+	if fmt == "json" {
+		jsonString, _ := json.MarshalIndent(jobs, "", "  ")
+		err := ioutil.WriteFile(fileName, jsonString, 0644)
+		checkErr(err)
+	} else if fmt == "csv" {
+		file, err := os.Create(fileName)
+		checkErr(err)
+
+		w := csv.NewWriter(file)
+		headers := structs.Names(&extractedJob{})
+		wErr := w.Write(headers)
+		checkErr(wErr)
+
+		for _, job := range jobs {
+			jobSlice := []string{
+				getApplyURL(job.ID),
+				job.Title,
+				job.Location,
+				job.Salary,
+				job.Summary,
+			}
+			jwErr := w.Write(jobSlice)
+			checkErr(jwErr)
+		}
+		defer func() {
+			w.Flush()
+			file.Close()
+		}()
 	}
 
 }
