@@ -1,4 +1,4 @@
-package main
+package scrapper
 
 import (
 	"encoding/csv"
@@ -23,11 +23,12 @@ type extractedJob struct {
 	Summary  string
 }
 
-func main() {
+// Scrape scraps job-posting
+func Scrape(term, fileFmt string) {
+	// csv, json
 	var jobs []extractedJob
 	c := make(chan []extractedJob)
-	baseURL := "https://kr.indeed.com/jobs?q=go&limit=50"
-	fileFmt := "json" // csv, json
+	baseURL := "https://kr.indeed.com/jobs?q=" + "term" + "&limit=50"
 
 	totalPages := getPages(baseURL)
 	for i := 0; i < totalPages; i++ {
