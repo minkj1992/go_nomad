@@ -28,9 +28,13 @@ func Scrape(term, fileFmt string) {
 	// csv, json
 	var jobs []extractedJob
 	c := make(chan []extractedJob)
-	baseURL := "https://kr.indeed.com/jobs?q=" + "term" + "&limit=50"
+	baseURL := "https://kr.indeed.com/jobs?q=" + term + "&limit=50"
+
+	fmt.Println(baseURL)
 
 	totalPages := getPages(baseURL)
+	fmt.Println(totalPages)
+
 	for i := 0; i < totalPages; i++ {
 		go getPage(baseURL, i, c)
 	}
@@ -40,7 +44,7 @@ func Scrape(term, fileFmt string) {
 		jobs = append(jobs, extractedJobs...)
 	}
 
-	writeJobs(jobs, fileFmt)
+	writeJobs(term, jobs, fileFmt)
 	fmt.Println("Done, extracted", len(jobs))
 }
 
@@ -79,10 +83,10 @@ func getPage(baseURL string, page int, mainC chan<- []extractedJob) {
 
 func extractJob(card *goquery.Selection, c chan<- extractedJob) {
 	id, _ := card.Attr("data-jk")
-	title := cleanString(card.Find(".title>a").Text())
-	location := cleanString(card.Find("sjcl").Text())
-	salary := cleanString(card.Find(".salaryText").Text())
-	summary := cleanString(card.Find(".summary").Text())
+	title := CleanString(card.Find(".title>a").Text())
+	location := CleanString(card.Find("sjcl").Text())
+	salary := CleanString(card.Find(".salaryText").Text())
+	summary := CleanString(card.Find(".summary").Text())
 	c <- extractedJob{
 		ID:       id,
 		Title:    title,
@@ -92,7 +96,8 @@ func extractJob(card *goquery.Selection, c chan<- extractedJob) {
 	}
 }
 
-func cleanString(str string) string {
+// CleanString cleans text with lowercase
+func CleanString(str string) string {
 	return strings.Join(strings.Fields(strings.TrimSpace(str)), " ")
 }
 
@@ -117,25 +122,28 @@ func getPages(url string) (pageCount int) {
 
 func checkErr(err error) {
 	if err != nil {
+		fmt.Println(err)
 		log.Fatalln(err)
 	}
 }
 
 func checkCode(res *http.Response) {
 	if res.StatusCode != 200 {
+		fmt.Println(res.StatusCode)
 		log.Fatalln("Request failed with Status: ", res.StatusCode)
 	}
 
 }
 
 // write to csv
-func writeJobs(jobs []extractedJob, fmt string) {
-	fileName := "jobs" + "." + fmt
-	if fmt == "json" {
+func writeJobs(term string, jobs []extractedJob, fileFmt string) {
+	fileName := term + "." + fileFmt
+	fmt.Println(fileName)
+	if fileFmt == "json" {
 		jsonString, _ := json.MarshalIndent(jobs, "", "  ")
 		err := ioutil.WriteFile(fileName, jsonString, 0644)
 		checkErr(err)
-	} else if fmt == "csv" {
+	} else if fileFmt == "csv" {
 		file, err := os.Create(fileName)
 		checkErr(err)
 
