@@ -8,11 +8,6 @@ import (
 
 var router *gin.Engine
 
-// func handleScrape(c echo.Context) error {
-
-// 	return c.Attachment(f.name, f.name)
-// }
-
 // https://github.com/gin-gonic/gin#html-rendering
 func main() {
 	// Set the router as the default one provided by Gin
